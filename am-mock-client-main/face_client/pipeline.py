@@ -24,14 +24,19 @@ MICROSCOPE_SCRIPT = os.environ.get(
     "MICROSCOPE_SCRIPT", "/home/raspi/Downloads/frsall/microscope/microscope_code.py"
 )
 
-def _launch_microscope() -> None:
+def _launch_microscope(pearl: bool = False) -> None:
     script = Path(MICROSCOPE_SCRIPT)
     if not script.is_file():
         logger.error("Microscope script not found: %s", script)
         return
-    logger.info("Launching microscope: %s", script)
+    cmd = [sys.executable, str(script)]
+    if pearl:
+        # Pearl has no IMX708 camera and no rotary encoder: the microscope
+        # skips the zoom preview and plays the video straight away.
+        cmd.append("--pearl")
+    logger.info("Launching microscope: %s", " ".join(cmd[1:]))
     # cwd = script dir so its relative test_video.mp4 path resolves
-    subprocess.run([sys.executable, str(script)], cwd=str(script.parent))
+    subprocess.run(cmd, cwd=str(script.parent))
 
 # Model presence check
 
@@ -269,7 +274,7 @@ class FaceRecognitionClient:
             print(f"\n>>> No face found with face_id={face_id}\n")
         return deleted
 
-    def run_camera(self) -> None:
+    def run_camera(self, pearl: bool = False) -> None:
         detector, embedder = self._ensure_backend()
         cfg = self.cfg
         device = cfg.camera_device
@@ -359,4 +364,4 @@ class FaceRecognitionClient:
                 server_client.close()
 
         if known_face:
-            _launch_microscope()
+            _launch_microscope(pearl)

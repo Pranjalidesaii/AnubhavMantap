@@ -1,9 +1,11 @@
+import argparse
 import cv2
 import time
 import os
 import sys
-from picamera2 import Picamera2
-from gpiozero import RotaryEncoder
+
+# picamera2 / gpiozero are imported lazily inside run_zoom_preview() so that
+# pearl mode (which uses neither) runs on hardware without them installed.
 
 
 # ============================================================
@@ -25,11 +27,62 @@ ZOOM_STEP = 0.05
 ENCODER_CLK_PIN = 10
 ENCODER_DT_PIN = 24
 
-# Test video
-VIDEO_PATH = "test_video.mp4"
+# Test video (resolved next to this script, so cwd does not matter)
+VIDEO_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "test_video.mp4"
+)
 
 # OpenCV window
 WINDOW_NAME = "Microscope"
+
+
+# ============================================================
+# PEARL MODE
+# ============================================================
+#
+# On the pearl unit there is no IMX708 camera and no rotary encoder.
+# In pearl mode the camera preview and the zoom-to-3x step are skipped
+# entirely, and the video plays straight away — i.e. as soon as
+# client.py detects a known face and launches this script.
+#
+# Enable it either way:
+#     python microscope_code.py --pearl
+#     PEARL=1 python microscope_code.py
+#
+# The environment variable is what makes the hand-off from client.py
+# work: the client launches this script as a subprocess, which inherits
+# the environment, so `PEARL=1 python client.py --camera` runs the whole
+# chain in pearl mode without touching the client.
+
+
+def _env_flag(name):
+    return os.environ.get(name, "").strip().lower() in (
+        "1", "true", "yes", "on"
+    )
+
+
+def pearl_enabled(argv=None):
+    """
+    Return True if pearl mode is requested, via --pearl or PEARL=1.
+    """
+
+    parser = argparse.ArgumentParser(
+        description="Microscope display program."
+    )
+
+    parser.add_argument(
+        "--pearl",
+        action="store_true",
+        help=(
+            "Pearl mode: skip the IMX708 camera and rotary-encoder "
+            "zoom, and play the video immediately."
+        )
+    )
+
+    args = parser.parse_args(argv)
+
+    return args.pearl or _env_flag("PEARL")
 
 
 # ============================================================
@@ -126,6 +179,9 @@ def run_zoom_preview():
     """
 
     print("[*] Starting Raspberry Pi Camera Module 3...")
+
+    from picamera2 import Picamera2
+    from gpiozero import RotaryEncoder
 
     picam2 = Picamera2()
 
@@ -336,19 +392,37 @@ def play_video():
 
 def main():
 
+    pearl = pearl_enabled()
+
     print()
     print("========================================")
     print("        TELESCOPE TEST PROGRAM")
+
+    if pearl:
+        print("              PEARL MODE")
+
     print("========================================")
     print()
 
-    # Start camera and zoom
-    should_play_video = run_zoom_preview()
+    if pearl:
 
-    # If 3x was reached, play the video
-    if should_play_video:
+        # No IMX708 camera and no rotary encoder on pearl:
+        # the face has already been detected by client.py,
+        # so go straight to the video.
+        print("[*] Pearl mode: skipping camera and zoom.")
+        print("[*] Playing video immediately.")
 
         play_video()
+
+    else:
+
+        # Start camera and zoom
+        should_play_video = run_zoom_preview()
+
+        # If 3x was reached, play the video
+        if should_play_video:
+
+            play_video()
 
     print()
     print("[*] Telescope program finished.")

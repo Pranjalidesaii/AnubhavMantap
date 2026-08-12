@@ -20,7 +20,7 @@ def _run(args, client: FaceRecognitionClient) -> None:
         args.camera = True
 
     if args.camera:
-        client.run_camera()
+        client.run_camera(pearl=args.pearl)
     elif args.register:
         client.register(args.register, args.image)
     elif args.diag:
@@ -39,6 +39,7 @@ def main():
             python client.py photo.jpg # use mode from config.yaml
             python client.py --server photo.jpg # force server mode
             python client.py --diag photo.jpg # force diagnostic mode
+            python client.py --camera --pearl # pearl: play the video as soon as a face is recognised
             python client.py --register Alice photo.jpg # register a face locally
             python client.py --list # list registered faces
             python client.py --delete 3 # delete face_id 3 from the local DB
@@ -50,6 +51,9 @@ def main():
     parser.add_argument("--server", action="store_true", help="Force server mode")
     parser.add_argument("--diag", action="store_true", help="Force diagnostic (local SQLite) mode")
     parser.add_argument("--camera", action="store_true", help="Use live camera feed")
+    parser.add_argument("--pearl", action="store_true",
+                        help="Pearl mode: launch the microscope with --pearl, so it skips the "
+                             "IMX708 camera and rotary-encoder zoom and plays the video immediately")
     parser.add_argument("--register", metavar="NAME",      help="Register a face with the given name")
     parser.add_argument("--list", action="store_true", help="List all registered faces in local DB")
     parser.add_argument("--delete", type=int, default=None, metavar="FACE_ID", help="Delete a face by ID from the local DB")
