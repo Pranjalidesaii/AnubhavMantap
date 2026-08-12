@@ -18,6 +18,9 @@ DISPLAY_SIZE = (720, 720)
 # Camera capture resolution
 CAMERA_CAPTURE_SIZE = (1280, 960)
 
+# libcamera index of the microscope's IMX708 (the FRS IMX415 is index 0)
+MICROSCOPE_CAMERA_INDEX = 1
+
 # Zoom settings
 ZOOM_MIN = 1.0
 ZOOM_MAX = 3.0
@@ -183,7 +186,8 @@ def run_zoom_preview():
     from picamera2 import Picamera2
     from gpiozero import RotaryEncoder
 
-    picam2 = Picamera2()
+    # The FRS camera (IMX415) is index 0; the microscope's IMX708 is index 1.
+    picam2 = Picamera2(camera_num=MICROSCOPE_CAMERA_INDEX)
 
     config = picam2.create_preview_configuration(
         main={

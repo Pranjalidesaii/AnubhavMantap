@@ -55,7 +55,7 @@ embedder:
 
 # ── Camera ────────────────────────────────────────────────────
 camera:
-  device: 1                      # camera device index (0 = default webcam)
+  device: 0                      # FRS camera (IMX415) — always index 0, so it works with or without the IMX708
   frame_skip: 10                 # run recognition every N frames
   backend: picamera2 # opencv (default) | picamera2 (Raspberry Pi 5 / libcamera-only cameras. See README)
 
