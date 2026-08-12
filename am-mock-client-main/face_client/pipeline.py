@@ -20,8 +20,13 @@ logger = logging.getLogger("face_client")
 
 # Microscope hand-off: run_camera() launches this script once a face is detected.
 # The camera is released first — the client and the microscope cannot both hold it.
+# Default resolves relative to this file: <repo>/am-mock-client-main/face_client/pipeline.py
+# -> <repo>/microscope/microscope_code.py
+_DEFAULT_MICROSCOPE_SCRIPT = (
+    Path(__file__).resolve().parents[2] / "microscope" / "microscope_code.py"
+)
 MICROSCOPE_SCRIPT = os.environ.get(
-    "MICROSCOPE_SCRIPT", "/home/raspi/Downloads/frsall/microscope/microscope_code.py"
+    "MICROSCOPE_SCRIPT", str(_DEFAULT_MICROSCOPE_SCRIPT)
 )
 
 def _launch_microscope(pearl: bool = False) -> None:
